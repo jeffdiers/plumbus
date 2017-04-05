@@ -5,26 +5,79 @@ import {
   Text,
   View,
   TextInput,
-  TouchableOpacity
+  TouchableOpacity,
+  Alert
 } from 'react-native';
 import Form from 'react-native-form';
+import Frisbee from 'frisbee';
+
+
+const api = new Frisbee({
+    baseURI: 'https://cryptic-sea-14253.herokuapp.com',
+    headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    }
+})
 
 export default class App extends Component {
+
     constructor(props) {
         super(props)
         this.state = { 
+            loading: false,
             enterCode: false,
-            phone: '',
-            email: ''
+            country: {
+                cca2: 'US',
+                callingCode: '1'
+            }
         }
     }
 
-    _getCode = () => {
 
-        console.log(this.refs.form.getValues())
+    _getCode = async () => {
 
-        this.setState({ enterCode: true })
+        this.setState({ loading: true })
+
+        try {
+            const res = await api.post('/users', {
+                body: {
+                    ...this.refs.form.getValues(),
+                    ...this.state.country
+                }
+            });
+
+            console.log('----res.body----')
+            console.log(res)
+
+            if (res.err) throw res.err;
+
+            this.setState({
+                loading: false,
+                enterCode: true,
+                userID: res.body._id
+            });
+            this.refs.form.refs.textInput.setNativeProps({ text: '' });
+            
+            Alert.alert('code on the way')
+
+        } catch (err) {
+            this.setState({loading: false})
+            Alert.alert('Oops!', err.message);
+            }
+
     }
+
+    // _verifyCode = async () => {
+    //     let _id = this.state.userID
+    //     try {
+    //         const res = await api.post('/users/'+_id+'/verify', {
+    //             body: {
+    //                 ...this.refs.form.getValues()
+    //             }
+    //         })
+    //     }
+    // }
   
     _getSubmitAction = () => {
         this.state.enterCode ? this._verifyCode() : this._getCode();
@@ -57,20 +110,33 @@ export default class App extends Component {
         );
 
         return (
-            <TextInput
-                ref={'textInput'}
-                name={ 'email' }
-                type={'TextInput'}
-                style={styles.textInput}
-                onChangeText={(email) => this.setState({email})}
-                placeholder={'Email'}
-                name={'email'}
-            />
+            <View>
+
+                <TextInput
+                    ref={'textInput'}
+                    name={ 'name' }
+                    type={'TextInput'}
+                    style={styles.textInput}
+                    onChangeText={(name) => this.setState({name})}
+                    placeholder={'Name'}
+                />
+
+                <TextInput
+                    ref={'textInput'}
+                    name={ 'email' }
+                    type={'TextInput'}
+                    style={styles.textInput}
+                    onChangeText={ (email) => this.setState({ email }) }
+                    placeholder={'Email'}
+                />
+
+            </View>
         )
     }
 
     render() {
 
+    let loadingText = this.state.loading ? 'Loading...' : ''
     let buttonText = this.state.enterCode ? 'Verify confirmation code' : 'Send confirmation code';
     let textStyle = this.state.enterCode ? {
         height: 50,
@@ -85,10 +151,12 @@ export default class App extends Component {
       <View style={styles.container}>
 
         <Text style={styles.welcome}>
-          Welcome to Plumbus
+          Welcome to Nomad
         </Text>
 
         <Form ref={'form'} style={styles.form}>
+
+            {this._renderEmail()}
 
             <TextInput
                 ref={'textInput'}
@@ -97,19 +165,18 @@ export default class App extends Component {
                 style={[styles.textInput, textStyle]}
                 onChangeText={(phone) => this.setState({phone})}
                 placeholder={this.state.enterCode ? '_ _ _ _ _ _' : 'Phone Number'}
-                name={'phone'}
                 autoCorrect={false}
             />
 
-            {this._renderEmail()}
 
           <TouchableOpacity style={styles.button} onPress={this._getSubmitAction}>
             <Text style={styles.buttonText}>{ buttonText }</Text>
           </TouchableOpacity>
 
         {this._renderFooter()}
-
         </Form>
+        <Text>{loadingText}</Text>
+        <Text>verification state: {this.state.userID}</Text>
 
     </View>
     );
@@ -146,7 +213,6 @@ const styles = StyleSheet.create({
       marginBottom: 20,
   },
   button: {
-      marginTop: 20,
       height: 50,
       backgroundColor: brandColor,
       alignItems: 'center',
