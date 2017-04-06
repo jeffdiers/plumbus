@@ -12,7 +12,8 @@
     "react-native": "0.43.0",
     "react-native-form": "^2.1.2",
     "react-native-loading-spinner-overlay": "^0.4.4",
-    "react-native-spinkit": "^1.0.2"
+    "react-native-spinkit": "^1.0.2",
+    "socket.io": "^1.7.3"
   },
   "devDependencies": {
     "babel-jest": "19.0.0",

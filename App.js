@@ -10,7 +10,12 @@ import {
 } from 'react-native';
 import Form from 'react-native-form';
 import Frisbee from 'frisbee';
+window.navigator.userAgent = "react-native";
 
+import SocketIOClient from 'socket.io-client';
+
+// deployed db -> https://cryptic-sea-14253.herokuapp.com
+// local db -> http://localhost:3000
 
 const api = new Frisbee({
     baseURI: 'https://cryptic-sea-14253.herokuapp.com',
@@ -32,6 +37,11 @@ export default class App extends Component {
                 callingCode: '1'
             }
         }
+
+        this.socket = SocketIOClient('http://localhost:3000');
+        this.socket.on('connection', function (socket) {
+            console.log('We have a connection')
+        });
     }
 
 
@@ -68,16 +78,32 @@ export default class App extends Component {
 
     }
 
-    // _verifyCode = async () => {
-    //     let _id = this.state.userID
-    //     try {
-    //         const res = await api.post('/users/'+_id+'/verify', {
-    //             body: {
-    //                 ...this.refs.form.getValues()
-    //             }
-    //         })
-    //     }
-    // }
+    _verifyCode = async () => {
+
+        this.setState({ loading: true })
+
+        let _id = this.state.userID
+
+        try {
+
+            const res = await api.post('/users/'+_id+'/verify', {
+                body: {
+                    ...this.refs.form.getValues()
+                }
+            })
+
+            if (res.err) throw res.err;
+
+            this.refs.form.refs.textInput.blur();
+
+            this.setState({ loading: false })
+            Alert.alert('Great success! you are verified :)')
+            
+        } catch (err) {
+            this.setState({ loading: false })
+            Alert.alert('Oops! didnt work', err.message)
+        }
+    }
   
     _getSubmitAction = () => {
         this.state.enterCode ? this._verifyCode() : this._getCode();
@@ -209,6 +235,7 @@ const styles = StyleSheet.create({
       borderColor: 'gray', 
       borderWidth: 1,
       borderRadius: 4,
+      borderColor: brandColor,
       padding: 10,
       marginBottom: 20,
   },
