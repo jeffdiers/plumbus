@@ -6,12 +6,12 @@ import {
   View,
   TextInput,
   TouchableOpacity,
-  Alert
+  Alert,
+  Platform
 } from 'react-native';
 import Form from 'react-native-form';
 import Frisbee from 'frisbee';
-window.navigator.userAgent = "react-native";
-
+import Icon from 'react-native-vector-icons/Ionicons'
 import SocketIOClient from 'socket.io-client';
 
 // deployed db -> https://cryptic-sea-14253.herokuapp.com
@@ -120,6 +120,10 @@ export default class App extends Component {
             </View>
         );
 
+    else if(this.state.loading)
+
+        return <View />
+        
         return (
             <View>
                 <Text style={styles.disclaimerText}>By tapping "Send confirmation code" above, we will send you an SMS to confirm your phone number. Message &amp; data rates may apply.</Text>
@@ -162,8 +166,7 @@ export default class App extends Component {
 
     render() {
 
-    let loadingText = this.state.loading ? 'Loading...' : ''
-    let buttonText = this.state.enterCode ? 'Verify confirmation code' : 'Send confirmation code';
+    let buttonText = this.state.enterCode ? 'Verify confirmation code' : this.state.loading ? 'Loading...' : 'Send confirmation code';
     let textStyle = this.state.enterCode ? {
         height: 50,
         textAlign: 'center',
@@ -173,38 +176,47 @@ export default class App extends Component {
         borderWidth: 0
     } : {};
 
+    let loadingText = null
+
+    if (this.state.loading) {
+        loadingText = <Text>Loading...</Text>
+    } else {
+        loadingText = <Text />
+    }
+
     return (
-      <View style={styles.container}>
+        <View style={this.state.loading ? styles.loadingContainer : styles.container}> 
+            <View style={styles.logo}>
+            <Icon name="ios-cut-outline" size={100} color="#744BAC" />
+            </View>
+            <Text style={styles.welcome}>
+            Welcome to Nomad
+            </Text>
 
-        <Text style={styles.welcome}>
-          Welcome to Nomad
-        </Text>
+            <Form ref={'form'} style={styles.form}>
 
-        <Form ref={'form'} style={styles.form}>
+                {this._renderEmail()}
 
-            {this._renderEmail()}
-
-            <TextInput
-                ref={'textInput'}
-                name={this.state.enterCode ? 'code' : 'phoneNumber' }
-                type={'TextInput'}
-                style={[styles.textInput, textStyle]}
-                onChangeText={(phone) => this.setState({phone})}
-                placeholder={this.state.enterCode ? '_ _ _ _ _ _' : 'Phone Number'}
-                autoCorrect={false}
-            />
+                <TextInput
+                    ref={'textInput'}
+                    name={this.state.enterCode ? 'code' : 'phoneNumber' }
+                    type={'TextInput'}
+                    keyboardType={Platform.OS === 'ios' ? 'number-pad' : 'numeric'}
+                    style={[styles.textInput, textStyle]}
+                    onChangeText={(phone) => this.setState({phone})}
+                    placeholder={this.state.enterCode ? '_ _ _ _ _ _' : 'Phone Number'}
+                    autoCorrect={false}
+                />
 
 
-          <TouchableOpacity style={styles.button} onPress={this._getSubmitAction}>
-            <Text style={styles.buttonText}>{ buttonText }</Text>
-          </TouchableOpacity>
-
-        {this._renderFooter()}
-        </Form>
-        <Text>{loadingText}</Text>
-        <Text>verification state: {this.state.userID}</Text>
-
-    </View>
+            <TouchableOpacity style={styles.button} onPress={this._getSubmitAction}>
+                <Text style={styles.buttonText}>{ buttonText }</Text>
+            </TouchableOpacity>
+            {loadingText}
+            {this._renderFooter()}
+            </Form>
+            <Text>verification state: {this.state.userID}</Text>
+        </View>  
     );
   }
 }
@@ -216,11 +228,26 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5FCFF',
   },
+  loadingContainer: {
+    flex: 1,
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    opacity: 0.75,
+    backgroundColor: brandColor,
+    height: 900,
+    width: 900
+  },
+  logo: {
+      alignItems: 'center',
+      marginTop: 50
+  },
   welcome: {
     fontSize: 20,
     textAlign: 'center',
-    marginTop: 60,
+    marginTop: 10,
     margin: 20,
+    color: brandColor
   },
   instructions: {
     textAlign: 'center',
